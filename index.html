@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TaskFlow | Task Management System</title>
+<style>
+  :root{--ink:#1c2452;--ink2:#2b3575;--paper:#f1f3f9;--card:#fff;--accent:#f2a93b;--ok:#2f9e6e;--err:#c8374a;--text:#1d2236;--muted:#646c88;--line:#d5d9e8}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:"Segoe UI",system-ui,-apple-system,Roboto,sans-serif;color:var(--text);background:var(--paper);min-height:100vh}
+  button,input,select{font:inherit}
+  .hidden{display:none!important}
+  :focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+
+  /* ---------- Login ---------- */
+  #login{display:grid;grid-template-columns:1.05fr 1fr;min-height:100vh}
+  .showcase{background:var(--ink);color:#fff;padding:48px 56px;display:flex;flex-direction:column;justify-content:center;gap:16px}
+  .brand{font-weight:800;font-size:1.5rem;display:flex;align-items:center;gap:10px}
+  .brand i{width:28px;height:28px;border-radius:8px;background:var(--accent);display:grid;place-items:center}
+  .brand i::after{content:"";width:12px;height:7px;border-left:3px solid var(--ink);border-bottom:3px solid var(--ink);transform:rotate(-45deg) translate(1px,-1px)}
+  .showcase h2{font-size:clamp(2rem,3.4vw,3rem);line-height:1.1;max-width:14ch}
+  .showcase p{color:#b9c0e6;max-width:38ch;line-height:1.55}
+  .panel{display:grid;place-items:center;padding:32px 24px}
+  .card{width:100%;max-width:400px}
+  .card h1{font-size:2rem;color:var(--ink);margin-bottom:6px}
+  .lead{color:var(--muted);margin-bottom:26px}
+  .field{margin-bottom:16px}
+  label{display:block;font-size:.88rem;font-weight:600;margin-bottom:6px}
+  input[type=text],input[type=email],input[type=password],input[type=date],select{width:100%;padding:12px 14px;color:var(--text);background:#fff;border:1.5px solid var(--line);border-radius:10px}
+  input.invalid{border-color:var(--err)}
+  .err{color:var(--err);font-size:.82rem;margin-top:5px;min-height:1em}
+  .wrap{position:relative}
+  .eye{position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:0;padding:6px 8px;font-size:.82rem;font-weight:600;color:var(--ink2);cursor:pointer}
+  .btn{padding:12px 18px;border-radius:10px;border:0;font-weight:600;cursor:pointer}
+  .btn.pri{background:var(--ink);color:#fff;width:100%;padding:14px}
+  .btn.pri:hover{background:var(--ink2)}
+  .btn.sm{width:auto;padding:10px 18px}
+  .btn.ghost{background:#fff;border:1.5px solid var(--line);color:var(--text)}
+  .hint{margin-top:18px;font-size:.85rem;color:var(--muted);text-align:center}
+
+  /* ---------- App shell ---------- */
+  #app{display:grid;grid-template-columns:240px 1fr;min-height:100vh}
+  aside{background:var(--ink);color:#fff;padding:24px 18px;display:flex;flex-direction:column;gap:6px}
+  aside .brand{margin-bottom:22px;font-size:1.3rem}
+  aside h4{font-size:.8rem;color:#aab3e0;font-weight:600;margin:14px 8px 6px}
+  .proj{display:flex;justify-content:space-between;align-items:center;width:100%;text-align:left;background:none;border:0;color:#dfe3fa;padding:10px 12px;border-radius:8px;cursor:pointer}
+  .proj:hover{background:var(--ink2)}
+  .proj.on{background:#fff;color:var(--ink);font-weight:600}
+  .proj span{font-size:.78rem;opacity:.8}
+  .addp{display:flex;gap:6px;margin-top:8px}
+  .addp input{padding:8px 10px;font-size:.85rem;border-radius:8px;border:0}
+  .addp button{background:var(--accent);border:0;border-radius:8px;padding:0 12px;font-weight:700;cursor:pointer}
+  .me{margin-top:auto;font-size:.85rem;color:#b9c0e6;padding:8px}
+  .me button{background:none;border:0;color:var(--accent);font-weight:600;cursor:pointer;margin-top:4px}
+
+  main{padding:28px 32px;overflow:auto}
+  .top{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:20px}
+  .top h1{font-size:1.7rem;color:var(--ink)}
+  .bell{position:relative;background:#fff;border:1.5px solid var(--line);border-radius:10px;padding:10px 14px;cursor:pointer;font-weight:600}
+  .bell b{background:var(--err);color:#fff;border-radius:10px;font-size:.72rem;padding:1px 7px;margin-left:6px}
+  .notes{position:absolute;right:0;top:calc(100% + 8px);z-index:5;width:300px;background:#fff;border:1.5px solid var(--line);border-radius:12px;box-shadow:0 12px 30px rgba(28,36,82,.18);padding:10px;text-align:left}
+  .notes p{padding:8px;font-size:.88rem;border-bottom:1px solid var(--line);font-weight:400}
+  .notes p:last-child{border:0}
+  .notes .late{color:var(--err);font-weight:600}
+  .prog{background:#fff;border:1.5px solid var(--line);border-radius:12px;padding:16px 18px;margin-bottom:20px}
+  .prog div.t{display:flex;justify-content:space-between;font-weight:600;margin-bottom:10px}
+  .bar{height:10px;border-radius:6px;background:var(--line);overflow:hidden}
+  .bar b{display:block;height:100%;background:var(--ok);transition:width .3s}
+  form.add{display:grid;grid-template-columns:2fr 1fr 1fr 1fr auto;gap:10px;margin-bottom:22px;align-items:end}
+  .board{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  .col{background:#e6e9f5;border-radius:14px;padding:12px;min-height:240px}
+  .col.over{outline:2px dashed var(--ink2)}
+  .col h3{font-size:.95rem;margin:4px 6px 12px;color:var(--ink);display:flex;justify-content:space-between}
+  .task{background:#fff;border-radius:10px;padding:12px;margin-bottom:10px;cursor:grab;border:1px solid var(--line)}
+  .task.dragging{opacity:.4}
+  .task .r{display:flex;gap:10px;align-items:flex-start}
+  .task input{width:18px;height:18px;accent-color:var(--ok);margin-top:2px}
+  .task.done .nm{text-decoration:line-through;color:var(--muted)}
+  .nm{font-weight:600;flex:1}
+  .meta{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px;font-size:.78rem;color:var(--muted)}
+  .tag{background:var(--paper);border-radius:6px;padding:2px 8px}
+  .due.late{color:var(--err);font-weight:600}.due.soon{color:#b97a0c;font-weight:600}
+  .meta select{width:auto;padding:3px 6px;font-size:.78rem;border-radius:6px}
+  .del{background:none;border:0;color:var(--muted);cursor:pointer;font-size:1.1rem}
+  .empty{color:var(--muted);font-size:.88rem;padding:10px 6px}
+  @media(max-width:900px){#login{grid-template-columns:1fr}.showcase{display:none}
+    #app{grid-template-columns:1fr}aside{flex-direction:row;flex-wrap:wrap;align-items:center}.me{margin:0 0 0 auto}
+    form.add,.board{grid-template-columns:1fr}main{padding:20px 16px}}
+  @media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<!-- ============ LOGIN PAGE ============ -->
+<section id="login">
+  <div class="showcase">
+    <div class="brand"><i></i> TaskFlow</div>
+    <h2>Plan the work. Finish it together.</h2>
+    <p>Organize tasks into projects, set deadlines, track progress and share work with your team.</p>
+  </div>
+  <div class="panel">
+    <div class="card">
+      <h1>Welcome back</h1>
+      <p class="lead">Log in to see your tasks and deadlines.</p>
+      <form id="loginForm" novalidate>
+        <div class="field">
+          <label for="email">Email</label>
+          <input type="email" id="email" autocomplete="email" placeholder="you@company.com">
+          <div class="err" id="emailErr" role="alert"></div>
+        </div>
+        <div class="field">
+          <label for="pass">Password</label>
+          <div class="wrap">
+            <input type="password" id="pass" autocomplete="current-password" placeholder="At least 6 characters">
+            <button type="button" class="eye" id="eye">Show</button>
+          </div>
+          <div class="err" id="passErr" role="alert"></div>
+        </div>
+        <button class="btn pri" type="submit">Log in</button>
+      </form>
+      <p class="hint">Demo: enter any valid email and a password of 6+ characters.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ DASHBOARD ============ -->
+<section id="app" class="hidden">
+  <aside>
+    <div class="brand"><i></i> TaskFlow</div>
+    <h4>Projects</h4>
+    <div id="projects"></div>
+    <form class="addp" id="projForm">
+      <input type="text" id="newProj" placeholder="New project" aria-label="New project name">
+      <button aria-label="Add project">+</button>
+    </form>
+    <div class="me"><span id="who"></span><br><button id="logout">Log out</button></div>
+  </aside>
+
+  <main>
+    <div class="top">
+      <h1 id="title">All tasks</h1>
+      <div style="position:relative">
+        <button class="bell" id="bell" aria-expanded="false">Notifications <b id="count">0</b></button>
+        <div class="notes hidden" id="notes"></div>
+      </div>
+    </div>
+
+    <div class="prog">
+      <div class="t"><span>Progress</span><span id="pct">0%</span></div>
+      <div class="bar"><b id="fill" style="width:0"></b></div>
+    </div>
+
+    <form class="add" id="taskForm">
+      <div><label for="tTitle">Task</label><input type="text" id="tTitle" placeholder="What needs doing?" required></div>
+      <div><label for="tProj">Project</label><select id="tProj"></select></div>
+      <div><label for="tDue">Deadline</label><input type="date" id="tDue"></div>
+      <div><label for="tOwn">Assign to</label><select id="tOwn"></select></div>
+      <button class="btn pri sm" type="submit">Add task</button>
+    </form>
+
+    <div class="board" id="board"></div>
+  </main>
+</section>
+
+<script>
+const TEAM = ["Me","Asha","Ravi","Meena"];
+const COLS = [["todo","To do"],["doing","In progress"],["done","Done"]];
+const $ = id => document.getElementById(id);
+let state, current = "All", user = "";
+
+/* ---------- Storage ---------- */
+function load(){
+  try{ state = JSON.parse(localStorage.getItem("taskflow")); }catch(e){ state = null; }
+  if(!state){
+    const d = n => new Date(Date.now()+n*864e5).toISOString().slice(0,10);
+    state = {projects:["Website","Marketing"],tasks:[
+      {id:1,title:"Write project brief",project:"Website",due:d(1),status:"todo",owner:"Me"},
+      {id:2,title:"Design home page",project:"Website",due:d(4),status:"doing",owner:"Asha"},
+      {id:3,title:"Plan launch email",project:"Marketing",due:d(-1),status:"todo",owner:"Ravi"},
+      {id:4,title:"Invite team members",project:"Website",due:d(-3),status:"done",owner:"Me"}]};
+  }
+}
+function save(){ try{ localStorage.setItem("taskflow", JSON.stringify(state)); }catch(e){} }
+
+/* ---------- Login ---------- */
+$("eye").onclick = () => {
+  const s = $("pass").type === "password";
+  $("pass").type = s ? "text" : "password";
+  $("eye").textContent = s ? "Hide" : "Show";
+};
+$("loginForm").onsubmit = e => {
+  e.preventDefault();
+  const em = $("email").value.trim(), pw = $("pass").value;
+  const okE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em), okP = pw.length >= 6;
+  $("emailErr").textContent = okE ? "" : "Enter a valid email, like name@company.com.";
+  $("passErr").textContent = okP ? "" : "Password must be at least 6 characters.";
+  $("email").classList.toggle("invalid", !okE);
+  $("pass").classList.toggle("invalid", !okP);
+  if(!okE || !okP) return;
+  user = em.split("@")[0];
+  try{ sessionStorage.setItem("tf_user", user); }catch(e){}
+  start();
+};
+$("logout").onclick = () => {
+  try{ sessionStorage.removeItem("tf_user"); }catch(e){}
+  $("app").classList.add("hidden"); $("login").classList.remove("hidden");
+  $("pass").value = "";
+};
+
+function start(){
+  load();
+  $("login").classList.add("hidden"); $("app").classList.remove("hidden");
+  $("who").textContent = "Signed in as " + user;
+  render();
+}
+
+/* ---------- Helpers ---------- */
+const today = () => new Date(new Date().toDateString());
+function dueInfo(t){
+  if(!t.due || t.status === "done") return {cls:"", txt: t.due ? "Due " + t.due : "No deadline"};
+  const days = Math.round((new Date(t.due) - today())/864e5);
+  if(days < 0) return {cls:"late", txt:"Overdue by " + (-days) + "d"};
+  if(days === 0) return {cls:"soon", txt:"Due today"};
+  if(days <= 2) return {cls:"soon", txt:"Due in " + days + "d"};
+  return {cls:"", txt:"Due " + t.due};
+}
+const esc = s => s.replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const visible = () => state.tasks.filter(t => current === "All" || t.project === current);
+
+/* ---------- Render ---------- */
+function render(){
+  // projects
+  const all = ["All", ...state.projects];
+  $("projects").innerHTML = all.map(p => {
+    const n = state.tasks.filter(t => p === "All" || t.project === p).length;
+    return `<button class="proj ${p===current?"on":""}" data-p="${esc(p)}">${esc(p)}<span>${n}</span></button>`;
+  }).join("");
+  document.querySelectorAll(".proj").forEach(b => b.onclick = () => { current = b.dataset.p; render(); });
+  $("title").textContent = current === "All" ? "All tasks" : current;
+
+  // selects
+  const keepP = $("tProj").value;
+  $("tProj").innerHTML = state.projects.map(p => `<option>${esc(p)}</option>`).join("");
+  if(state.projects.includes(keepP)) $("tProj").value = keepP; else if(current !== "All") $("tProj").value = current;
+  $("tOwn").innerHTML = TEAM.map(m => `<option>${m}</option>`).join("");
+
+  // progress
+  const list = visible(), done = list.filter(t => t.status === "done").length;
+  const pct = list.length ? Math.round(done/list.length*100) : 0;
+  $("pct").textContent = `${pct}% (${done} of ${list.length} done)`;
+  $("fill").style.width = pct + "%";
+
+  // board
+  $("board").innerHTML = COLS.map(([k,label]) => {
+    const items = list.filter(t => t.status === k);
+    return `<div class="col" data-col="${k}"><h3>${label}<span>${items.length}</span></h3>` +
+      (items.map(card).join("") || `<div class="empty">Drag tasks here.</div>`) + `</div>`;
+  }).join("");
+  wire();
+  notify();
+}
+function card(t){
+  const d = dueInfo(t);
+  return `<div class="task ${t.status==="done"?"done":""}" draggable="true" data-id="${t.id}">
+    <div class="r"><input type="checkbox" ${t.status==="done"?"checked":""} data-done="${t.id}" aria-label="Mark ${esc(t.title)} complete">
+      <span class="nm">${esc(t.title)}</span>
+      <button class="del" data-del="${t.id}" aria-label="Delete task">&times;</button></div>
+    <div class="meta"><span class="tag">${esc(t.project)}</span><span class="due ${d.cls}">${d.txt}</span>
+      <select data-own="${t.id}" aria-label="Assigned to">${TEAM.map(m => `<option ${m===t.owner?"selected":""}>${m}</option>`).join("")}</select></div></div>`;
+}
+
+/* ---------- Events: complete, delete, share, drag & drop ---------- */
+function wire(){
+  document.querySelectorAll("[data-done]").forEach(c => c.onchange = () => {
+    const t = state.tasks.find(x => x.id == c.dataset.done);
+    t.status = c.checked ? "done" : "todo"; save(); render();
+  });
+  document.querySelectorAll("[data-del]").forEach(b => b.onclick = () => {
+    state.tasks = state.tasks.filter(x => x.id != b.dataset.del); save(); render();
+  });
+  document.querySelectorAll("[data-own]").forEach(s => s.onchange = () => {
+    state.tasks.find(x => x.id == s.dataset.own).owner = s.value; save();
+  });
+  document.querySelectorAll(".task").forEach(el => {
+    el.ondragstart = e => { e.dataTransfer.setData("text/plain", el.dataset.id); el.classList.add("dragging"); };
+    el.ondragend = () => el.classList.remove("dragging");
+  });
+  document.querySelectorAll(".col").forEach(col => {
+    col.ondragover = e => { e.preventDefault(); col.classList.add("over"); };
+    col.ondragleave = () => col.classList.remove("over");
+    col.ondrop = e => {
+      e.preventDefault();
+      const t = state.tasks.find(x => x.id == e.dataTransfer.getData("text/plain"));
+      if(t){ t.status = col.dataset.col; save(); }
+      render();
+    };
+  });
+}
+
+/* ---------- Notifications ---------- */
+function notify(){
+  const open = state.tasks.filter(t => t.status !== "done" && t.due);
+  const alerts = open.map(t => ({t, days: Math.round((new Date(t.due) - today())/864e5)}))
+                     .filter(a => a.days <= 2).sort((a,b) => a.days - b.days);
+  $("count").textContent = alerts.length;
+  $("notes").innerHTML = alerts.length ? alerts.map(a =>
+    `<p class="${a.days<0?"late":""}">${esc(a.t.title)}<br><small>${a.days<0?"Overdue by "+(-a.days)+" day(s)":a.days===0?"Due today":"Due in "+a.days+" day(s)"} &middot; ${esc(a.t.owner)}</small></p>`
+  ).join("") : "<p>No upcoming deadlines.</p>";
+}
+$("bell").onclick = () => {
+  const h = $("notes").classList.toggle("hidden");
+  $("bell").setAttribute("aria-expanded", String(!h));
+};
+
+/* ---------- Add task / project ---------- */
+$("taskForm").onsubmit = e => {
+  e.preventDefault();
+  const title = $("tTitle").value.trim();
+  if(!title) return;
+  state.tasks.push({id:Date.now(), title, project:$("tProj").value, due:$("tDue").value, status:"todo", owner:$("tOwn").value});
+  $("tTitle").value = ""; $("tDue").value = "";
+  save(); render();
+};
+$("projForm").onsubmit = e => {
+  e.preventDefault();
+  const n = $("newProj").value.trim();
+  if(n && !state.projects.includes(n)){ state.projects.push(n); current = n; save(); }
+  $("newProj").value = ""; render();
+};
+
+/* ---------- Auto-login if session exists ---------- */
+try{ const u = sessionStorage.getItem("tf_user"); if(u){ user = u; start(); } }catch(e){}
+</script>
+</body>
+</html>
